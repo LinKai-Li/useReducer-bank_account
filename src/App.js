@@ -19,11 +19,6 @@ INSTRUCTIONS / CONSIDERATIONS:
 7. Customer can only close an account if there is no loan, AND if the balance is zero. If this condition is not met, just return the state. If the condition is met, the account is deactivated and all money is withdrawn. The account basically gets back to the initial state
 */
 
-const DEPOSIT_NUM = 150;
-const WITHDRAW_NUM = 50;
-const REQUEST_LOAN = 5000;
-const INITIAL_BALANCE = 500;
-
 const initialState = {
   balance: 0,
   loan: 0,
@@ -31,36 +26,31 @@ const initialState = {
 };
 
 function reducer(state, action) {
+  if (!state.isActive && action.type !== "openAccount") return state;
+
   switch (action.type) {
     case "openAccount":
-      return { ...state, balance: INITIAL_BALANCE, isActive: true };
+      return { ...state, balance: 500, isActive: true };
     case "deposit":
-      return { ...state, balance: state.balance + DEPOSIT_NUM };
+      return { ...state, balance: state.balance + action.payload };
     case "withdraw":
-      return {
-        ...state,
-        balance:
-          state.balance !== 0 ? state.balance - WITHDRAW_NUM : state.balance,
-      };
+      return { ...state, balance: state.balance - action.payload };
     case "requestLoan":
+      if (state.loan > 0) return state;
       return {
         ...state,
-        balance:
-          state.loan === 0 ? state.balance + REQUEST_LOAN : state.balance,
-        loan: state.loan === 0 ? state.loan + REQUEST_LOAN : state.loan,
+        loan: action.payload,
+        balance: state.balance + action.payload,
       };
     case "payLoan":
       return {
         ...state,
-        balance:
-          state.loan !== 0 ? state.balance - REQUEST_LOAN : state.balance,
-        loan: state.loan !== 0 ? state.loan - REQUEST_LOAN : state.loan,
+        loan: 0,
+        balance: state.balance - state.loan,
       };
     case "closeAccount":
-      return {
-        ...state,
-        isActive: !(state.balance === 0 && state.loan === 0),
-      };
+      if (state.loan > 0 || state.balance !== 0) return state;
+      return initialState;
     default:
       throw new Error("Action Unknown");
   }
@@ -91,7 +81,7 @@ export default function App() {
       <p>
         <button
           onClick={() => {
-            dispatch({ type: "deposit" });
+            dispatch({ type: "deposit", payload: 150 });
           }}
           disabled={!isActive}
         >
@@ -101,7 +91,7 @@ export default function App() {
       <p>
         <button
           onClick={() => {
-            dispatch({ type: "withdraw" });
+            dispatch({ type: "withdraw", payload: 50 });
           }}
           disabled={!isActive}
         >
@@ -111,7 +101,7 @@ export default function App() {
       <p>
         <button
           onClick={() => {
-            dispatch({ type: "requestLoan" });
+            dispatch({ type: "requestLoan", payload: 5000 });
           }}
           disabled={!isActive}
         >
